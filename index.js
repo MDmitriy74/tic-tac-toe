@@ -4,6 +4,7 @@ const EMPTY = ' ';
 
 const container = document.getElementById('fieldWrapper');
 
+let winnDemention = 3;
 let dimension = 3;
 let field = [];
 let curPlayer = CROSS;
@@ -15,6 +16,7 @@ addResetListener();
 
 function inputFieldDimension(){
     dimension = +prompt("Введите размер поля:",  3)
+    winnDemention = dimension;
     if (dimension <= 1){
         alert("Неиграбельное поле")
         inputFieldDimension()
@@ -34,19 +36,71 @@ function startGame () {
     renderGrid(dimension);
 }
 
-function renderGrid (dimension) {
+function renderGrid (previous = []) {
     container.innerHTML = '';
-
+    field = []
     for (let i = 0; i < dimension; i++) {
         const row = document.createElement('tr');
+        field[i] = new Array(dimension).fill(EMPTY);
         for (let j = 0; j < dimension; j++) {
             const cell = document.createElement('td');
-            cell.textContent = EMPTY;
-            cell.addEventListener('click', () => celClickHandler(i, j));
+            console.log(i, j, dimension - 1, previous);
+            if (i < previous.length && j < previous.length) {
+                cell.textContent = previous[i][j];
+                field[i][j] = previous[i][j];
+            } else {
+                cell.textContent = EMPTY;
+            }
+            cell.addEventListener('click', () => MakeOneStep(i, j));
             row.appendChild(cell);
         }
         container.appendChild(row);
     }
+}
+
+function makeAIStep() {
+    let empties = [];
+    for (let i = 0; i < dimension; ++i) {
+        for (let j = 0; j < dimension; j++) {
+            if (field[i][j] == EMPTY) {
+                empties.push([i, j]);
+            }
+        }
+    }
+
+    let chousen = empties[Math.floor(Math.random() * empties.length)];
+    renderSymbolInCell(curPlayer, chousen[0], chousen[1]);
+    let winningCels = getWinningCells();
+    console.log(winningCels);
+    if (winningCels.length !== 0) {
+        for (let i = 0; i < winningCels.length; i++) {
+            renderSymbolInCell(curPlayer, winningCels[i][0], winningCels[i][1], 'red');
+        }
+        isGameOver = true;
+        alert(`Выиграл: ${curPlayer}`)
+        return;
+    }
+    if (dimension * dimension === filledCells) {
+        alert(`А игра то закончилась ничьей`)
+        return;
+    }
+    curPlayer = curPlayer == CROSS ? ZERO : CROSS;
+
+}
+
+function MakeOneStep(row, col)
+{
+    celClickHandler(row, col);
+    if (filledCells * 2 + 1 > dimension * dimension)
+    {
+        dimension += 1;
+        renderGrid(field);
+    }
+
+     if (!isGameOver) {
+         makeAIStep();
+     }
+
 }
 
 function celClickHandler (row, col) {
@@ -71,7 +125,6 @@ function celClickHandler (row, col) {
         return;
     }
     curPlayer = curPlayer == CROSS ? ZERO : CROSS;
-
 }
 
 function getWinningCells() {
